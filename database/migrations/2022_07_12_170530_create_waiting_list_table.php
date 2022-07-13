@@ -18,6 +18,7 @@ class CreateWaitingListTable extends Migration
             $table->text('email');
             $table->integer('cake_id')->unsigned();
             $table->foreign('cake_id')->references('id')->on('cake');
+            $table->boolean('send_email')->default(1);
             $table->timestamps();
             $table->softDeletes();
         });
