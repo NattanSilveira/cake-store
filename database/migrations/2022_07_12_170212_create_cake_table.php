@@ -18,6 +18,7 @@ class CreateCakeTable extends Migration
             $table->text('nome');
             $table->integer('peso');
             $table->integer('qtd_disponivel');
+            $table->timestamps();
             $table->softDeletes();
         });
     }
