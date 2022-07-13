@@ -3,7 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\CakeStoreRequest;
+use App\Http\Requests\CakeUpdateRequest;
+use App\Jobs\SendCakeAvailableMail;
+use App\Models\Cake;
+use Illuminate\Support\Facades\DB;
 
 class CakeController extends Controller
 {
@@ -30,12 +34,36 @@ class CakeController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  \App\Http\Requests\CakeStoreRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(CakeStoreRequest $request)
     {
-        //
+        DB::beginTransaction();
+        try {
+            $cake = Cake::create([
+                "nome" => $request->nome,
+                "peso" => $request->peso,
+                "qtd_disponivel" => $request->qtd_disponivel
+            ]);
+
+            if (!empty($request->interessados)) {
+                foreach ($request->interessados as $item) {
+                    $cake->waitingList()->create([
+                        "email" => $item['email']
+                    ]);
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'nook', 'msg' => 'Falha no cadastro']);
+        }
+
+        SendCakeAvailableMail::dispatch($cake)->onQueue('available-mail');
+
+        return response()->json(['status' => 'ok', 'msg' => 'Cadastrado com sucesso!']);
+
     }
 
     /**
@@ -67,7 +95,7 @@ class CakeController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(CakeUpdateRequest $request, $id)
     {
         //
     }
