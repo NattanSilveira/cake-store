@@ -18,4 +18,12 @@ class Cake extends Model
         return $this->hasMany(WaitingList::class, 'cake_id', 'id');
     }
 
+    public static function boot() {
+        parent::boot();
+
+        static::deleting(function($cake) {
+            $cake->waitingList()->delete();
+        });
+    }
+
 }
