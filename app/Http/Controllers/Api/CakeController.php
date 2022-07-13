@@ -97,7 +97,33 @@ class CakeController extends Controller
      */
     public function update(CakeUpdateRequest $request, $id)
     {
-        //
+        $cake = Cake::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+
+            if (!is_null($request->nome)){
+                $cake->nome = $request->nome;
+            }
+            if (!is_null($request->peso)){
+                $cake->peso = $request->peso;
+            }
+            if (!is_null($request->qtd_disponivel)){
+                $cake->qtd_disponivel = $request->qtd_disponivel;
+            }
+            $cake->save();
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['status' => 'nook', 'msg' => 'Falha ao atualizar o cadastro']);
+        }
+
+        if ($cake->qtd_disponivel > 0) {
+            SendCakeAvailableMail::dispatch($cake)->onQueue('available-mail');
+        }
+
+        return response()->json(['status' => 'ok', 'msg' => 'Atualizado com sucesso!']);
     }
 
     /**
@@ -108,6 +134,10 @@ class CakeController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $cake = Cake::findOrFail($id);
+
+        $cake->delete();
+
+        return response()->json(['status' => 'ok', 'msg' => 'Bolo deletado!']);
     }
 }
